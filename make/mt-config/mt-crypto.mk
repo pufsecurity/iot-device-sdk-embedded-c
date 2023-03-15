@@ -49,6 +49,20 @@ IOTC_CRYPTO_LIB_DEP ?= $(CRYPTOAUTHLIB_LIBRARY)
 IOTC_LIB_FLAGS += -L$(CRYPTOAUTHLIB_BUILD_DIR)
 IOTC_LIB_FLAGS += -lcryptoauth
 
+# PUF +++
+else ifeq ($(IOTC_BSP_CRYPTO), crypto_pufsecurity)
+    CRYPTO_PUFCC_DIR := ./third_party/pufcc
+    CRYPTO_PUFCC_LIB_DIR := $(CRYPTO_PUFCC_DIR)/lib
+    CRYPTO_PUFCC_SUBDIRS := lib include
+    CRYPTO_PUFCC_LIBRARY := $(CRYPTO_PUFCC_DIR)/lib/libpufcc.a
+
+    IOTC_INCLUDE_FLAGS += -I$(CRYPTO_PUFCC_DIR)
+    IOTC_INCLUDE_FLAGS += $(foreach d, $(CRYPTO_PUFCC_SUBDIRS), -I$(CRYPTO_PUFCC_DIR)/$d)
+    IOTC_CRYPTO_LIB_DEP ?= $(CRYPTO_PUFCC_LIBRARY)
+    IOTC_LIB_FLAGS += -L$(CRYPTO_PUFCC_LIB_DIR)
+    IOTC_LIB_FLAGS += -lpufcc
+# PUF ---
+
 else
     $(error unsupported IOTC_BSP_CRYPTO value "$(IOTC_BSP_CRYPTO)")
 endif

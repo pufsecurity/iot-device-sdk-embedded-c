@@ -107,6 +107,12 @@ iotc_state_t iotc_mqtt_codec_layer_push(void* context, void* data,
   }
 
   if (NULL != msg) {
+        
+#ifdef PUF_DEMO_LOG_MQTT
+    PUF_MQTT_DEBUG_MSG_NL("Send Message");
+    puf_iotc_debug_mqtt_message(msg);
+#endif
+    
     iotc_debug_mqtt_message_dump(msg);
   }
 
@@ -300,6 +306,13 @@ iotc_state_t iotc_mqtt_codec_layer_pull(void* context, void* data,
     iotc_debug_logger("error while reading msg!");
     goto err_handling;
   }
+
+
+#ifdef PUF_DEMO_LOG_MQTT
+  PUF_MQTT_DEBUG_MSG_NL("Receive Message ");
+  puf_iotc_debug_mqtt_message(layer_data->msg);  
+#endif
+      
 
   iotc_debug_format("[m.id[%d] m.type[%d]] msg decoded!",
                     iotc_mqtt_get_message_id(layer_data->msg),

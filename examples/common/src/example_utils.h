@@ -24,6 +24,25 @@
  */
 int iotc_example_handle_command_line_args(int argc, char* argv[]);
 
+#ifdef PUF
+
+/* Get the device id from the given device path.
+ * Search for the last '/' of the device path and print the string after the last '/'
+ *
+ * Parameters:
+ * [p_device_path]  Pointer of the device path
+ */
+void iotc_puf_print_device_id(const char *p_device_path);
+
+
+/* Parses and manages commandline arguments. Project id, device path and publish
+ * topic are require to be passed as command line arguments. Prints
+ * notification if either of these is not found.
+ */
+
+int iotc_puf_read_command_line(int argc, char* argv[]);
+#endif
+
 /* Attempts to load the client's identifying private key from disk so that the
    byte data may be passed to the 'iotc_connect function'.  Please note that the
    IoTC API and Board Support Package have various means to use private keys.

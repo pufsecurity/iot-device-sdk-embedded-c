@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# PUF +++
+#include puf_config.mk
+# PUF ---
+
 LIBIOTC_SRC := $(LIBIOTC)/src/
 LIBIOTC_SOURCE_DIR := $(LIBIOTC)/src/libiotc
 LIBIOTC_INTERFACE_INCLUDE_DIRS := $(LIBIOTC)/include
@@ -165,6 +169,17 @@ IOTC_SRCDIRS += $(IOTC_BSP_DIR)/platform/$(IOTC_BSP_PLATFORM)
 
 IOTC_INCLUDE_FLAGS += -I$(LIBIOTC)/include/bsp
 
+# PUF +++
+# PUF TLS only supports mbedtls now
+ifeq ($(PUF_CRYPTO_TLS), YES)
+    IOTC_BSP_TLS_PUFCC_SRC_IOTC = $(IOTC_BSP_DIR)/tls/$(IOTC_BSP_TLS)/pufcc_mbedtls/src_iotc
+    IOTC_BSP_TLS_PUFCC_INC = $(IOTC_BSP_DIR)/tls/$(IOTC_BSP_TLS)/pufcc_mbedtls/include
+    IOTC_BSP_TLS_PUFCC_CFG = $(IOTC_BSP_DIR)/tls/$(IOTC_BSP_TLS)/pufcc_mbedtls/config
+    IOTC_INCLUDE_FLAGS += -I$(IOTC_BSP_TLS_PUFCC_INC) -I$(IOTC_BSP_TLS_PUFCC_CFG)
+    # add $(IOTC_BSP_TLS_PUFCC_SRC) for pufcc_mbedtls.c, need to revise later
+    IOTC_SRCDIRS += $(IOTC_BSP_TLS_PUFCC_SRC_IOTC)
+endif
+# PUF ---
 # platform independent BSP drivers
 IOTC_SRCDIRS += $(LIBIOTC_SOURCE_DIR)/io/net
 IOTC_SRCDIRS += $(LIBIOTC_SOURCE_DIR)/memory

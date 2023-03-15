@@ -1,0 +1,59 @@
+#!/bin/bash
+# Copyright 2022-2023 PUFsecurity
+#
+# It is licensed under the BSD 3-Clause license; you may not use this file
+# except in compliance with the License.
+#
+# You may obtain a copy of the License at:
+#  https://opensource.org/licenses/BSD-3-Clause
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+source ~/.bashrc
+BASE=$(dirname "${BASH_SOURCE[0]}")
+certs="$BASE/certs"
+device_id_path="$certs/uid.txt"
+PROJECT="a-plus-project"
+REGION="asia-east1"
+KEY_TYPE="es256-pem"
+
+if [ $# -eq 0 ]; then
+    echo "./puf-device-init config-file"
+    exit 1
+fi
+if [ ! -f "$1" ]; then
+    echo "$1 env_config no such."
+    exit 1
+fi
+
+# gen key
+mkdir -p "$BASE/certs"
+gen_key="$BASE/../bin/pufcc_giot_util"
+"$gen_key" -k -a ECDSAP256 -u "$certs/pub.pem" -p "$certs/priv.bin" -i -d "$device_id_path" > /dev/null 2>&1
+
+if [ ! -f "$device_id_path" ]; then
+    echo "$device_id_path device_id no such."
+    exit 1
+fi
+
+config=$1
+registry=$(grep -o '"registry":"[^"]*' "$config" | grep -o '[^"]*$')
+device_id=$(cat "$device_id_path") 
+key_path=$(grep -o '"public_key":"[^"]*' "$config" | grep -o '[^"]*$')
+
+if [ ! -f "$key_path" ]; then
+    echo "$key_path key_path no such."
+    exit 1
+fi
+sed -i "/device/s/:".*"/:\"$device_id\",/" "$config"
+
+echo "Project = $PROJECT"
+echo "REGION = $REGION"
+echo "Registry = $registry"
+echo "Public key path = $key_path"
+#echo "Device ID = $device_id"
+gcloud iot devices create "$device_id" --project="$PROJECT" --region="$REGION" --registry="$registry" --public-key path="$key_path",type="$KEY_TYPE"

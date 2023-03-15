@@ -141,3 +141,6 @@ Copyright 2018-2020 Google LLC
 Licensed under the BSD 3-Clause license.
 
 For more information, see [`LICENSE.md`](LICENSE.md).
+
+## How to build with PUFsecurity PUFcc
+Please see - [`README_PUF.md`](README_PUF.md): User guide to build example client with and without PUFsecurity PUFcc.

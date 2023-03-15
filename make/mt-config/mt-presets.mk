@@ -14,6 +14,9 @@
 # limitations under the License.
 
 include make/mt-config/mt-target-platform.mk
+# PUF +++
+include puf_config.mk
+# PUF ---
 
 # CONFIG for POSIX presets
 CONFIG_POSIX_MAX           =posix_fs-posix_platform-tls_bsp-memory_limiter
@@ -33,6 +36,12 @@ TARGET_STATIC_DEV          =-static-debug
 TARGET_STATIC_REL          =-static-release
 
 PRESET ?= POSIX_REL
+# PUF ++++
+ifeq ($(PUF_CROSS_COMPILE), YES)
+PRESET=PUF_ARM_REL
+endif
+# PUF ----
+
 
 # -------------------------------------------------------
 # POSIX DEV
@@ -103,6 +112,21 @@ else ifeq ($(PRESET), ARM_REL)
     TARGET = $(TARGET_STATIC_REL)
     IOTC_BSP_PLATFORM = dummy
     IOTC_TARGET_PLATFORM = arm-linux
+
+# PUF ++++
+# -------------------------------------------------------
+# PUF_ARM_REL
+else ifeq ($(PRESET), PUF_ARM_REL_MIN)
+    CONFIG = $(CONFIG_POSIX_MIN)
+    TARGET = $(TARGET_STATIC_REL)
+    IOTC_BSP_PLATFORM = posix
+    IOTC_TARGET_PLATFORM = arm-linux
+else ifeq ($(PRESET), PUF_ARM_REL)
+    CONFIG = $(CONFIG_POSIX_MAX)
+    TARGET = $(TARGET_STATIC_REL)
+    IOTC_BSP_PLATFORM = posix
+    IOTC_TARGET_PLATFORM = arm-linux
+# PUF ----
 
 # -------------------------------------------------------
 # Fuzz Tests

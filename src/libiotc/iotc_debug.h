@@ -75,6 +75,16 @@ void iotc_debug_data_logger_impl(const char* msg,
 #define iotc_debug_data_logger(...)
 #endif /* IOTC_DEBUG_OUTPUT */
 
+
+#ifdef PUF_DEMO_LOG_MQTT
+#define PUF_MQTT_DEBUG_MSG_NL(str, ...)   __iotc_printf("\n[MQTT] "str "\n", ## __VA_ARGS__)
+#define PUF_MQTT_DEBUG_MSG(str, ...)   __iotc_printf("[MQTT] "str "\n", ## __VA_ARGS__)
+#else
+#define PUF_MQTT_DEBUG_MSG_NL(str, ...)
+#define PUF_MQTT_DEBUG_MSG(str, ...)   
+#endif
+
+
 #define IOTC_LAYER_FUNCTION_PRINT_FUNCTION_DIGEST()
 #define IOTC_LAYER_FUNCTION_PRINT_FUNCTION_DIGEST_OFF()      \
   __iotc_printf(                                             \

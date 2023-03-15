@@ -53,6 +53,13 @@ iotc_time_t iotc_bsp_time_getcurrenttime_milliseconds();
  */
 iotc_time_t iotc_bsp_time_getmonotonictime_milliseconds();
 
+#ifdef PUF
+/**
+ * @brief Prints current time.
+ */
+void iotc_bsp_time_print_currenttime_day_time();
+#endif
+
 #ifdef __cplusplus
 }
 #endif

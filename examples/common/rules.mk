@@ -15,7 +15,13 @@
 
 IOTC_CLIENT_PATH ?= $(CURDIR)/../../
 
+# PUF +++
+include $(IOTC_CLIENT_PATH)/puf_config.mk
+# PUF ---
+
 include $(IOTC_CLIENT_PATH)/make/mt-config/mt-target-platform.mk
+
+
 
 CC ?= cc
 AR ?= ar
@@ -30,6 +36,14 @@ IOTC_EXAMPLE_SRCS += common/commandline.c
 IOTC_EXAMPLE_SRCS += common/example_utils.c
 IOTC_EXAMPLE_SRCS += $(IOTC_EXAMPLE_NAME).c
 
+# PUF +++
+ifeq ($(PUF_CRYPTO), YES)
+    IOTC_EXAMPLE_SRCS += pufcc_sec.c
+    IOTC_EXAMPLE_SRCS += puf_cfg.c
+    IOTC_EXAMPLE_SRCS += puf_info.c
+endif
+# PUF ---
+
 IOTC_EXAMPLE_DEPS := $(subst $(IOTC_EXAMPLE_SRCDIR)/,,$(IOTC_EXAMPLE_SRCS:.c=.d))
 IOTC_EXAMPLE_OBJS := $(subst $(IOTC_EXAMPLE_SRCDIR)/,,$(IOTC_EXAMPLE_SRCS:.c=.o))
 
@@ -42,11 +56,27 @@ IOTC_CLIENT_INC_PATH += $(IOTC_CLIENT_PATH)/include
 IOTC_CLIENT_INC_PATH += $(IOTC_CLIENT_PATH)/include/bsp
 IOTC_CLIENT_LIB_PATH ?= $(IOTC_CLIENT_PATH)/bin/$(IOTC_TARGET_PLATFORM)
 
+# PUF +++
+ifeq ($(PUF_CRYPTO), YES)
+    PUF_CRYPTO_DIR_PATH = $(IOTC_CLIENT_PATH)/third_party/pufcc
+    PUF_CRYPTO_LIB_INC_PATH = $(PUF_CRYPTO_DIR_PATH)/include
+    PUF_CRYPTO_LIB_PATH = $(PUF_CRYPTO_DIR_PATH)/lib
+    IOTC_CLIENT_INC_PATH += $(PUF_CRYPTO_LIB_INC_PATH)
+    #IOTC_CLIENT_LIB_PATH += $(PUF_CRYPTO_LIB_PATH)
+endif
+# PUF ---
+
 IOTC_CLIENT_ROOTCA_LIST := $(IOTC_CLIENT_PATH)/res/trusted_RootCA_certs/roots.pem
 
 IOTC_FLAGS_INCLUDE += $(foreach i,$(IOTC_CLIENT_INC_PATH),-I$i)
 
 IOTC_FLAGS_COMPILER ?= -Wall -Werror -Wno-pointer-arith -Wno-format -fstrict-aliasing -Os -Wextra
+
+# PUF +++
+ifeq ($(PUF_CROSS_COMPILE), YES)
+   IOTC_FLAGS_COMPILER += -mcpu=cortex-a9 -mfpu=vfpv3 -mfloat-abi=hard
+endif
+# PUF ---
 
 # TLS BSP related configuration
 IOTC_BSP_TLS ?= mbedtls
@@ -64,3 +94,10 @@ endif
 # -lpthread only if both linux and multithreading is enabled in the
 # Google Cloud IoT EmbeddedC Client at compile time
 IOTC_FLAGS_LINKER := -L$(IOTC_CLIENT_LIB_PATH) -liotc -lpthread $(TLS_LIB_CONFIG_FLAGS) -lm
+
+# PUF +++
+ifeq ($(PUF_CRYPTO), YES)
+    IOTC_FLAGS_LINKER += -L$(PUF_CRYPTO_LIB_PATH) -lpufcc
+    IOTC_FLAGS_COMPILER += -DPUF
+endif
+# PUF ---

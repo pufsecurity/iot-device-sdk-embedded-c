@@ -196,6 +196,13 @@ extern void iotc_debug_mqtt_message_dump(const iotc_mqtt_message_t* msg);
 #define iotc_debug_mqtt_message_dump(...)
 #endif
 
+
+#ifdef PUF_DEMO_LOG_MQTT 
+extern void puf_iotc_debug_mqtt_message(const iotc_mqtt_message_t* message);
+#else
+#define puf_iotc_debug_mqtt_message(...)
+#endif
+
 extern void iotc_mqtt_message_free(iotc_mqtt_message_t** msg);
 
 /**

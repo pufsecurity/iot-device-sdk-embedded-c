@@ -15,12 +15,28 @@
 
 include make/mt-os/mt-os-common.mk
 
+# PUF +++
+include puf_config.mk
+ifeq ($(PUF_CROSS_COMPILE), YES)
+  
+  IOTC_COMMON_COMPILER_FLAGS += -fPIC
+  IOTC_COMMON_COMPILER_FLAGS += -mcpu=cortex-a9 -mfpu=vfpv3 -mfloat-abi=hard
+  # Temporarily disable these warnings until the code gets changed.
+  IOTC_COMMON_COMPILER_FLAGS += -Wno-format
+  IOTC_LIBS_FLAGS += lrdimon
+
+else
+# PUF ---
 IOTC_COMMON_COMPILER_FLAGS += -fPIC
 IOTC_COMMON_COMPILER_FLAGS += -mcpu=cortex-m3 -mthumb
 # Temporarily disable these warnings until the code gets changed.
 IOTC_COMMON_COMPILER_FLAGS += -Wno-format
 IOTC_COMMON_COMPILER_FLAGS += -specs=rdimon.specs
 IOTC_LIBS_FLAGS += lrdimon
+
+# PUF +++
+endif
+# PUF ---
 
 IOTC_ARFLAGS += -rs -c $(XI)
 

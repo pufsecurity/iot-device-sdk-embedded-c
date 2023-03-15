@@ -28,6 +28,14 @@
 #include <mbedtls/error.h>
 #include <mbedtls/platform.h>
 #include <mbedtls/ssl.h>
+#ifdef PUF_TLS_DEBUG
+#include <mbedtls/debug.h>
+#endif
+
+#if defined(PUF_CRYPTO_TLS)
+#include "pufcc_mbedtls.h"
+#endif
+
 
 /**
  * @brief If the libiotc's certificate buffer's last character is '\n' (common
@@ -42,6 +50,23 @@ static void mbedtls_prepare_certificate_buffer(uint8_t* cert_buffer,
     *c = '\0';
   }
 }
+
+#ifdef PUF_TLS_DEBUG
+#if 1
+#define DEBUG_LEVEL 5
+#else
+#define DEBUG_LEVEL 3
+#endif
+static void puf_debug( void *ctx, int level,
+                      const char *file, int line,
+                      const char *str )
+{
+    ((void) level);
+
+    fprintf( (FILE *) ctx, "%s:%04d: %s", file, line, str );
+    fflush(  (FILE *) ctx  );
+}
+#endif
 
 /**
  * @typedef mbedtls_tls_context_t
@@ -204,8 +229,14 @@ iotc_bsp_tls_state_t iotc_bsp_tls_init(
   /* set the ca certificate chain */
   mbedtls_ssl_conf_ca_chain(&mbedtls_tls_context->conf,
                             &mbedtls_tls_context->cacert, NULL);
+#ifdef MBEDTLS_PUFCC_TLS_RNG_ALT 
+  mbedtls_ssl_conf_rng(&mbedtls_tls_context->conf, pufcc_mbedtls_trng_random,
+                       &mbedtls_tls_context->ctr_drbg);
+
+#else
   mbedtls_ssl_conf_rng(&mbedtls_tls_context->conf, mbedtls_ctr_drbg_random,
                        &mbedtls_tls_context->ctr_drbg);
+#endif
 
   if ((ret_state = mbedtls_ssl_setup(&mbedtls_tls_context->ssl,
                                      &mbedtls_tls_context->conf)) != 0) {
@@ -221,6 +252,15 @@ iotc_bsp_tls_state_t iotc_bsp_tls_init(
                           ret_state);
     goto err_handling;
   }
+
+#ifdef PUF_TLS_DEBUG
+  mbedtls_debug_set_threshold(DEBUG_LEVEL);
+  mbedtls_ssl_conf_dbg( &mbedtls_tls_context->conf, puf_debug, stdout);
+    
+  mbedtls_debug_print_msg( &mbedtls_tls_context->ssl, 5, __FILE__, __LINE__,
+                           "Text message, 2 == %d", 2 );  
+#endif
+
 
   return IOTC_BSP_TLS_STATE_OK;
 

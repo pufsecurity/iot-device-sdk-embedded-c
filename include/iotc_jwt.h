@@ -69,6 +69,18 @@ iotc_state_t iotc_create_iotcore_jwt(
     const iotc_crypto_key_data_t* private_key_data, char* dst_jwt_buf,
     size_t dst_jwt_buf_len, size_t* bytes_written);
 
+#ifdef PUF
+
+#define PUF_PRINT_JWT               //print JWT
+//#define PUF_PRINT_JWT_EXP          //print JWT expire time
+#define PUF_PRINT_JWT_PAYLOAD      //print JWT Payload
+
+iotc_state_t iotc_puf_create_iotcore_jwt(
+    const char* project_id, uint32_t expiration_period_sec,
+    const iotc_crypto_key_data_t* private_key_data, char* dst_jwt_buf,
+    size_t dst_jwt_buf_len, size_t* bytes_written,char* nonce);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

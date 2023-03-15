@@ -18,12 +18,24 @@
 #include <iotc_jwt.h>
 #include <stdio.h>
 
+#ifdef PUF
+#include <string.h>
+#endif
+
 #include "commandline.h"
 #include "example_utils.h"
+#ifdef PUF
+#include "../../iot_core_mqtt_client_puf/src/pufcc_sec.h"
+#include "../../iot_core_mqtt_client_puf/src/puf_info.h"
+#endif
 
 #define IOTC_UNUSED(x) (void)(x)
 
 extern iotc_crypto_key_data_t iotc_connect_private_key_data;
+#ifdef PUF
+extern int jwt_exp_time;
+extern int publish_period;
+#endif
 
 static iotc_timed_task_handle_t delayed_publish_task =
     IOTC_INVALID_TIMED_TASK_HANDLE;
@@ -72,6 +84,73 @@ int iotc_example_handle_command_line_args(int argc, char* argv[]) {
   return 0;
 }
 
+#ifdef PUF
+void iotc_puf_print_device_id(const char *p_device_path) 
+{
+    char *p_last_slash = NULL;
+    const char *p_device_id = NULL;
+    
+    p_last_slash = strrchr(p_device_path, '/');
+
+    if (p_last_slash != NULL)
+    {
+        p_device_id = p_last_slash + 1;
+    }
+    else
+    {
+        p_device_id = p_device_path;
+    }
+
+    printf("IoTC Device Id: %s\n\n", p_device_id);
+}
+
+int iotc_puf_read_command_line(int argc, char* argv[]) {
+  char options[] = "h:p:d:t:m:f:e:c:";
+  const char iotc_cilent_version_str[] = "IoTC Embedded C Client Version: 1.0.3";
+  int missingparameter = 0;
+  int retval = 0;
+
+  /* log the executable name and library version */
+  printf("\n%s\n%s\n", argv[0], iotc_cilent_version_str);
+
+  /* Parse the argv array for ONLY the options specified in the options string
+   */
+  retval = iotc_parse(argc, argv, options, sizeof(options));
+
+  if (-1 == retval) {
+    /* iotc_parse has returned an error, and has already logged the error
+       to the console. Therefore just silently exit here. */
+    return -1;
+  }
+
+  /* Check to see that the required parameters were all present on the command
+   * line */
+  if (NULL == iotc_project_id) {
+    missingparameter = 1;
+    printf("-p --project_id is required\n");
+  }
+
+  if (NULL == iotc_device_path) {
+    missingparameter = 1;
+    printf("-d --device_path is required\n");
+  }
+
+  if (NULL == iotc_publish_topic) {
+    missingparameter = 1;
+    printf("-t --publish_topic is required\n");
+  }
+
+  if (1 == missingparameter) {
+    /* Error has already been logged, above.  Silently exit here */
+    printf("\n");
+    return -1;
+  }
+
+  iotc_puf_print_device_id(iotc_device_path);
+  return 0;
+}
+#endif
+
 int load_ec_private_key_pem_from_posix_fs(char* buf_ec_private_key_pem,
                                           size_t buf_len) {
   FILE* fp = fopen(iotc_private_key_filename, "rb");
@@ -115,7 +194,6 @@ int load_ec_private_key_pem_from_posix_fs(char* buf_ec_private_key_pem,
 void on_connection_state_changed(iotc_context_handle_t in_context_handle,
                                  void* data, iotc_state_t state) {
   iotc_connection_data_t* conn_data = (iotc_connection_data_t*)data;
-
   if (NULL == conn_data) {
     return;
   }
@@ -124,6 +202,7 @@ void on_connection_state_changed(iotc_context_handle_t in_context_handle,
     /* IOTC_CONNECTION_STATE_OPENED means that the connection has been
        established and the IoTC Client is ready to send/recv messages */
     case IOTC_CONNECTION_STATE_OPENED:
+      
       printf("connected to %s:%d\n", conn_data->host, conn_data->port);
 
       /* Publish immediately upon connect. 'publish_function' is defined
@@ -133,9 +212,15 @@ void on_connection_state_changed(iotc_context_handle_t in_context_handle,
                        /*user_data=*/NULL);
 
       /* Create a timed task to publish every 5 seconds. */
+      #ifdef PUF
       delayed_publish_task =
-          iotc_schedule_timed_task(in_context_handle, publish_function, 5, 15,
-                                   /*user_data=*/NULL);
+          iotc_schedule_timed_task(in_context_handle, publish_function, publish_period, 15,
+                                   /*user_data=*/NULL);      
+      #else
+      delayed_publish_task =
+            iotc_schedule_timed_task(in_context_handle, publish_function, 5, 15,
+                                     /*user_data=*/NULL);
+      #endif
       break;
 
     /* IOTC_CONNECTION_STATE_OPEN_FAILED is set when there was a problem
@@ -163,6 +248,7 @@ void on_connection_state_changed(iotc_context_handle_t in_context_handle,
          registered activities. Using cancel function on handler will remove the
          handler from the timed queue which prevents the registered handle to be
          called when there is no connection. */
+        
       if (IOTC_INVALID_TIMED_TASK_HANDLE != delayed_publish_task) {
         iotc_cancel_timed_task(delayed_publish_task);
         delayed_publish_task = IOTC_INVALID_TIMED_TASK_HANDLE;
@@ -182,10 +268,24 @@ void on_connection_state_changed(iotc_context_handle_t in_context_handle,
            was due to an expired JWT. */
         char jwt[IOTC_JWT_SIZE] = {0};
         size_t bytes_written = 0;
+        #ifdef PUF
+        char *nonce = NULL;
+        nonce = calloc(nonce_len, sizeof(char));
+        printf("\n[IoTC] Generate %d bytes nonce for JWT token\n", nonce_len/2);
+        puf_get_nonce(nonce);
+
+        state = iotc_puf_create_iotcore_jwt(iotc_project_id,
+                                        /*jwt_expiration_period_sec=*/jwt_exp_time,
+                                        &iotc_connect_private_key_data, jwt,
+                                        IOTC_JWT_SIZE, &bytes_written, nonce);
+        free(nonce);
+        #else
         state = iotc_create_iotcore_jwt(iotc_project_id,
                                         /*jwt_expiration_period_sec=*/3600,
                                         &iotc_connect_private_key_data, jwt,
-                                        IOTC_JWT_SIZE, &bytes_written);
+                                        IOTC_JWT_SIZE, &bytes_written);    
+        #endif
+        
         if (IOTC_STATE_OK != state) {
           printf(
               "iotc_create_iotcore_jwt returned with error"
@@ -218,10 +318,26 @@ void publish_function(iotc_context_handle_t context_handle,
      function 'on_connection_state_changed' above, so we can ignore it.) */
   IOTC_UNUSED(user_data);
 
+  #ifdef PUF
+  char info[2100];
+  Gethealthreport_flatten(info);
+  //snprintf(info,2100, "%s",content);
+  printf("\n\n");
+  printf("[IoTC] \n");
+  printf("publishing content \"%s\" to topic: \"%s\"\n\n", info,
+         iotc_publish_topic);
+
+  iotc_publish(context_handle, iotc_publish_topic, info,
+               iotc_example_qos,
+               /*callback=*/NULL, /*user_data=*/NULL);
+  #else
   printf("publishing msg \"%s\" to topic: \"%s\"\n", iotc_publish_message,
          iotc_publish_topic);
 
   iotc_publish(context_handle, iotc_publish_topic, iotc_publish_message,
                iotc_example_qos,
                /*callback=*/NULL, /*user_data=*/NULL);
+  #endif
+
+
 }

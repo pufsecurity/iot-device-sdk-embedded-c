@@ -21,6 +21,39 @@
 #include "iotc_macros.h"
 #include "iotc_mqtt_message.h"
 
+
+#ifdef PUF_DEMO_LOG_MQTT
+void puf_iotc_debug_mqtt_message(const iotc_mqtt_message_t* message) 
+{
+    uint32_t type = message->common.common_u.common_bits.type;
+
+    if (type == IOTC_MQTT_TYPE_CONNECT) 
+    {
+        PUF_MQTT_DEBUG_MSG("Message type - CONNECT");
+    }
+    else if (type == IOTC_MQTT_TYPE_CONNACK) 
+    {
+        PUF_MQTT_DEBUG_MSG("Message type - CONNACK\n");
+    }      
+    else if (type == IOTC_MQTT_TYPE_PUBLISH) 
+    {
+        PUF_MQTT_DEBUG_MSG("Message type - PUBLISH. Msg Id:%d,\n       Topic:%s ", 
+               message->publish.message_id, message->publish.topic_name->data_ptr );
+    }
+    else if (type == IOTC_MQTT_TYPE_PUBACK) 
+    {
+        PUF_MQTT_DEBUG_MSG("Message type - PUBACK. Msg Id:%d ",
+               message->puback.message_id);
+    }
+    else if (type == IOTC_MQTT_TYPE_DISCONNECT) 
+    {
+        PUF_MQTT_DEBUG_MSG("Message type - DISCONNECT");
+    }
+  
+}
+#endif
+
+
 #if IOTC_DEBUG_OUTPUT
 void iotc_debug_mqtt_message_dump(const iotc_mqtt_message_t* message) {
   iotc_debug_printf("message\n");

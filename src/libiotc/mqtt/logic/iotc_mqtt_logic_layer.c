@@ -314,6 +314,11 @@ iotc_state_t iotc_mqtt_logic_layer_pull(void* context, void* data,
          * in logic of one of a handler function */
         iotc_debug_format("Error, can't find message with: id = %d", msg_id);
 
+#ifdef PUF_DEMO_LOG_MQTT
+        PUF_MQTT_DEBUG_MSG_NL("Error, can't find message with id = %d", msg_id);
+        puf_iotc_debug_mqtt_message(recvd_msg);          
+#endif
+
         iotc_debug_mqtt_message_dump(recvd_msg);
         iotc_mqtt_message_free(&recvd_msg);
 

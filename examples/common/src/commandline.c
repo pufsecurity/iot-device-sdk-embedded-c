@@ -35,13 +35,26 @@ void iotc_usage(const char* options, unsigned options_length);
 
 iotc_mqtt_qos_t iotc_example_qos = IOTC_EXAMPLE_DEFAULT_QOS;
 
+#ifdef PUF
+#define DEFAULT_PRIVATE_KEY_FIILENAME "priv.bin"
+#else
 #define DEFAULT_PRIVATE_KEY_FIILENAME "ec_private.pem"
+#endif
 
 const char* iotc_project_id;
 const char* iotc_device_path;
 const char* iotc_publish_topic;
 const char* iotc_publish_message;
 const char* iotc_private_key_filename;
+#ifdef PUF
+int jwt_exp_time;
+const char* iotc_puf_config_filename;
+int nonce_len = 16;
+int connection_timeout = 10;
+int keepalive_timeout = 20;
+int publish_period = 5;
+#endif
+
 
 int iotc_parse(int argc, char** argv, char* valid_options,
                unsigned options_length) {
@@ -52,6 +65,10 @@ int iotc_parse(int argc, char** argv, char* valid_options,
   iotc_publish_topic = NULL;
   iotc_private_key_filename = DEFAULT_PRIVATE_KEY_FIILENAME;
   iotc_publish_message = "Hello From Your IoTC client!";
+#ifdef PUF
+  jwt_exp_time = 3600;
+  iotc_puf_config_filename = NULL;
+#endif
 
   while (1) {
     static struct option long_options[] = {
@@ -61,6 +78,10 @@ int iotc_parse(int argc, char** argv, char* valid_options,
         {"publish_topic", required_argument, 0, 't'},
         {"publish_message", required_argument, 0, 'm'},
         {"private_key_filename", optional_argument, 0, 'f'},
+#ifdef PUF
+        {"jwt_expired_time", required_argument, 0, 'e'},
+        {"config_filename", optional_argument, 0, 'c'},
+#endif
         {0, 0, 0, 0}};
 
     /* getopt_long stores the option index here. */
@@ -89,6 +110,14 @@ int iotc_parse(int argc, char** argv, char* valid_options,
       case 'f':
         iotc_private_key_filename = optarg;
         break;
+#ifdef PUF
+      case 'e':
+        jwt_exp_time = atoi(optarg);
+        break;
+      case 'c':
+        iotc_puf_config_filename = optarg;
+        break;
+#endif
       case 'h':
       default:
         iotc_help_flag = 1;
@@ -152,9 +181,25 @@ void iotc_usage(const char* options, unsigned options_length) {
         printf(
             "-f --private_key_filename\n\tThe filename, including path from "
             "cwd,\n");
+        #ifdef PUF
+        printf(" \t of the device identifying private_key. Defaults to: %s\n",
+               "priv.bin");
+        #else
         printf(" \t of the device identifying private_key. Defaults to: %s\n",
                DEFAULT_PRIVATE_KEY_FIILENAME);
+        #endif
+
         break;
+      #ifdef PUF
+      case 'e':
+        printf(
+            "-e --jwt_expired_time\n\tSet JWT expired time(secs). Defaults to 3600 secs\n");
+        break;
+      case 'c':
+        printf(
+            "-c --iotc_puf_config_filename\n\tParse connection_timeout(Defaults:10), keepalive_timeout(Defaults:20), \n\tpublish_period(Defaults:5), nonce_len(Defaults:16). Defaults to:config.txt\n");
+        break;
+      #endif
       case 'h': /* Don't print anything for the help option since we're printing
                    usage */
         break;

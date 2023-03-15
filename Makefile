@@ -13,6 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# PUF +++
+include  $(PWD)/puf_config.mk
+# PUF ---
+
+
 LIBIOTC := $(CURDIR)
 
 export LIBIOTC
@@ -29,11 +34,41 @@ IOTC_PROTO_COMPILER ?=
 IOTC_BSP_DIR ?= $(LIBIOTC)/src/bsp
 MD ?= @
 
+
+# PUF +++
+ifeq ($(PUF), YES)
+    IOTC_CONFIG_FLAGS+=$(PUF_FLAGS)
+endif
+ifeq ($(PUF_IOTC_DEBUG), YES) 
+    IOTC_DEBUG_OUTPUT=1
+endif
+
+ifeq ($(PUF_TLS_DEBUG), YES) 
+    IOTC_CONFIG_FLAGS+=-DPUF_TLS_DEBUG
+endif
+
+ifeq ($(PUF_DEMO_LOG), YES) 
+    IOTC_CONFIG_FLAGS+=-DPUF_DEMO_LOG_MQTT
+endif
+# PUF ---
+
 # TLS related configuration
 IOTC_BSP_TLS ?= mbedtls
 
 # Cryptographic BSP implementation
+# PUF +++
+ifeq ($(PUF_CRYPTO), YES) 
+    IOTC_BSP_CRYPTO=crypto_pufsecurity
+
+    ifeq ($(PUF_CRYPTO_TLS), YES) 
+        IOTC_CONFIG_FLAGS += -DPUF_CRYPTO_TLS
+    endif
+else
+# PUF ---
 IOTC_BSP_CRYPTO ?= $(IOTC_BSP_TLS)
+# PUF +++
+endif
+# PUF ---
 
 #detect if the build happen on Travis
 ifdef TRAVIS_OS_NAME

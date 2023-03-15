@@ -1,0 +1,5 @@
+git repo: https://github.com/pufsecurity/mbedtls/tree/mbedtls-2.12.0-pufcc
+
+Verified version:
+commit : f92678866bde0ebb45e31809b0ccb825949b620e
+Title : Support MbedTLS PUFsecurity PUFcc crypto alternative.

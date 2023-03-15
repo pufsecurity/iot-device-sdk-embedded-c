@@ -1,0 +1,35 @@
+#!/bin/bash
+# Copyright 2022-2023 PUFsecurity
+#
+# It is licensed under the BSD 3-Clause license; you may not use this file
+# except in compliance with the License.
+#
+# You may obtain a copy of the License at:
+#  https://opensource.org/licenses/BSD-3-Clause
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+source ~/.bashrc
+if [ $# -eq 0 ]; then
+    echo "./puf-device-delete.sh config-file"
+    exit 1
+fi
+if [ ! -f "$1" ]; then
+    echo "$1 no such."
+    exit 1
+fi
+
+config=$1
+PROJECT="a-plus-project"
+REGION="asia-east1"
+
+registry=$(grep -o '"registry":"[^"]*' "$config" | grep -o '[^"]*$')
+device=$(grep -o '"device":"[^"]*' "$config" | grep -o '[^"]*$')
+
+gcloud iot devices list --project="$PROJECT" --region="$REGION" --registry="$registry"
+gcloud iot devices delete "$device" --project="$PROJECT" --region="$REGION" --registry="$registry" --quiet

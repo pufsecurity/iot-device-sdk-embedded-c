@@ -29,6 +29,10 @@ extern const char* iotc_device_path;
 extern const char* iotc_publish_topic;
 extern const char* iotc_publish_message;
 extern const char* iotc_private_key_filename;
+#ifdef PUF
+extern int nonce_len;
+#endif
+
 
 int iotc_parse(int argc, char** argv, char* valid_options,
                const unsigned options_length);

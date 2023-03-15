@@ -64,6 +64,13 @@ static inline void call_topic_handler(
     iotc_evttd_execute(IOTC_CONTEXT_DATA(context)->evtd_instance,
                        subscribe_data->subscribe.handler);
   } else {
+    
+#ifdef PUF_DEMO_LOG_MQTT
+    PUF_MQTT_DEBUG_MSG_NL("Recived publish message (m.id[%d]) for topic " 
+                               "which is not registered", iotc_mqtt_get_message_id(msg_memory));
+    puf_iotc_debug_mqtt_message(msg_memory);            
+#endif
+
     iotc_debug_format(
         "[m.id[%d]] received publish message for topic which "
         "is not registered",
